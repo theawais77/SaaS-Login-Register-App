@@ -11,12 +11,6 @@
         "src": "/(.*)",
         "dest": "app.js"
         }
-    ],
-    "env": {
-        "CONNECTION_STRING": "@connection_string",
-        "EMAIL_USER": "@email_user",
-        "EMAIL_PASS": "@email_pass",
-        "GOOGLE_CLIENT_ID": "@google_client_id",
-        "GOOGLE_CLIENT_SECRET": "@google_client_secret"
-    } 
+    ]
+   
 }
