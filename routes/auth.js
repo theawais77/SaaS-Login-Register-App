@@ -4,7 +4,7 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/user");
 const Otp = require("../models/otp");
 const sendEmail = require("../utils/sendEmail");
-
+const passport = require('passport');
 const router = express.Router();
 
 router.post("/register", async (req, res) => {
@@ -179,7 +179,7 @@ router.post("/reset-password", async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ msg: "User not found" });
 
-    // 🔐 Check if new password is same as old password
+    //Check if new password is same as old password
     const isSamePassword = await bcrypt.compare(newPassword, user.password);
     if (isSamePassword) {
       return res
@@ -198,5 +198,20 @@ router.post("/reset-password", async (req, res) => {
     res.status(500).send("Server error");
   }
 });
+
+// Step 1: Redirect to Google for authentication
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+// Step 2: Handle Google callback
+router.get('/google/callback',
+  passport.authenticate('google', { failureRedirect: '/' }),
+  (req, res) => {
+    res.json({
+      msg: 'Login successful with Google',
+      user: req.user,
+      isNewUser: req.user.createdAt.getTime() > Date.now() - 10000 // crude 10s check
+    });
+  }
+);
 
 module.exports = router;
