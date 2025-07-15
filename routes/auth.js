@@ -103,7 +103,7 @@ router.post("/login", async (req, res) => {
 
     await sendEmail(email, otpCode, "login");
 
-    res.json({ msg: "OTP sent to your email. Please verify." });
+    res.json({ msg: "OTP sent to your email. Please verify.", id: user._id });
   } catch (err) {
     console.error(err);
     res.status(500).send("Server error");
@@ -162,15 +162,42 @@ router.post("/forgot-password", async (req, res) => {
   }
 });
 
-router.post("/reset-password", async (req, res) => {
-  const { email, code, newPassword } = req.body;
+// Add this new route before /reset-password
+router.post("/verify-reset-otp", async (req, res) => {
+  const { email, code } = req.body;
 
   try {
     const otpRecord = await Otp.findOne({ email, code });
 
-    if (!otpRecord)
+    if (!otpRecord) {
       return res.status(400).json({ msg: "Invalid or expired OTP" });
+    }
 
+    if (otpRecord.expiresAt < new Date()) {
+      await Otp.deleteOne({ _id: otpRecord._id });
+      return res.status(400).json({ msg: "OTP has expired" });
+    }
+
+    // Return success without deleting the OTP yet (we'll use it in reset-password)
+    res.json({ msg: "OTP verified successfully", email, code });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server error");
+  }
+});
+
+// Modified reset-password route (now it just handles password reset)
+router.post("/reset-password", async (req, res) => {
+  const { email, code, newPassword } = req.body;
+
+  try {
+    // First verify the OTP still exists and is valid
+    const otpRecord = await Otp.findOne({ email, code });
+    if (!otpRecord) {
+      return res.status(400).json({ msg: "Invalid or expired OTP" });
+    }
+
+    // Check if OTP is expired (though this should have been caught in verify step)
     if (otpRecord.expiresAt < new Date()) {
       await Otp.deleteOne({ _id: otpRecord._id });
       return res.status(400).json({ msg: "OTP has expired" });
@@ -179,7 +206,7 @@ router.post("/reset-password", async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ msg: "User not found" });
 
-    //Check if new password is same as old password
+    // Check if new password is same as old password
     const isSamePassword = await bcrypt.compare(newPassword, user.password);
     if (isSamePassword) {
       return res
@@ -188,8 +215,9 @@ router.post("/reset-password", async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-
     await User.updateOne({ email }, { $set: { password: hashedPassword } });
+    
+    // Now we can delete the OTP since it's been used
     await Otp.deleteOne({ _id: otpRecord._id });
 
     res.json({ msg: "Password reset successful" });
@@ -199,10 +227,8 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
-// Step 1: Redirect to Google for authentication
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
-// Step 2: Handle Google callback
 router.get('/google/callback',
   passport.authenticate('google', { failureRedirect: '/' }),
   (req, res) => {

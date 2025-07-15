@@ -3,7 +3,7 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-
+const cors = require('cors');
 const session = require('express-session');
 const passport = require('passport');
 require('./configs/passportConfig'); 
@@ -21,7 +21,10 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
 }));
-
+app.use(cors({
+  origin: 'http://localhost:5173', 
+  credentials: true
+}));
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
