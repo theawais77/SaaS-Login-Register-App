@@ -22,7 +22,7 @@ app.use(session({
   saveUninitialized: false,
 }));
 app.use(cors({
-  origin: 'http://localhost:5173', 
+  origin: 'https://saa-s-ui.vercel.app', 
   credentials: true
 }));
 app.use(logger('dev'));

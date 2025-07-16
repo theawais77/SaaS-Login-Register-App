@@ -232,11 +232,8 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 router.get('/google/callback',
   passport.authenticate('google', { failureRedirect: '/' }),
   (req, res) => {
-    res.json({
-      msg: 'Login successful with Google',
-      user: req.user,
-      isNewUser: req.user.createdAt.getTime() > Date.now() - 10000 // crude 10s check
-    });
+    
+    res.redirect('http://localhost:5173'); 
   }
 );
 
