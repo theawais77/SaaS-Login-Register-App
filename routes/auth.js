@@ -233,7 +233,7 @@ router.get('/google/callback',
   passport.authenticate('google', { failureRedirect: '/' }),
   (req, res) => {
     
-    res.redirect('http://localhost:5173'); 
+    res.redirect('https://saa-s-ui.vercel.app'); 
   }
 );
 
